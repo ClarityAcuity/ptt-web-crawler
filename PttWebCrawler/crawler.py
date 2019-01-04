@@ -38,6 +38,7 @@ class PttWebCrawler(object):
         group.add_argument('-i', metavar=('START_INDEX', 'END_INDEX'), type=int, nargs=2, help="Start and end index")
         group.add_argument('-a', metavar='ARTICLE_ID', help="Article ID")
         parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
+        parser.add_argument('-dp', '--dirpath', help='File directory path', dest='dp', default='.')
 
         if not as_lib:
             if cmdline:
@@ -45,21 +46,23 @@ class PttWebCrawler(object):
             else:
                 args = parser.parse_args()
             board = args.b
+            dirpath = args.dp
             if args.i:
                 start = args.i[0]
                 if args.i[1] == -1:
                     end = self.getLastPage(board)
                 else:
                     end = args.i[1]
-                self.parse_articles(start, end, board)
+                self.parse_articles(start, end, board, dirpath)
             else:  # args.a
                 article_id = args.a
-                self.parse_article(article_id, board)
+                self.parse_article(article_id, board, dirpath)
 
     def parse_articles(self, start, end, board, path='.', timeout=3):
+            directory = path
             filename = board + '-' + str(start) + '-' + str(end) + '.json'
-            filename = os.path.join(path, filename)
-            self.store(filename, u'{"articles": [', 'w')
+            #filename = os.path.join(path, filename)
+            self.store(directory, filename, u'{"articles": [', 'w')
             for i in range(end-start+1):
                 index = start + i
                 print('Processing index:', str(index))
@@ -79,20 +82,21 @@ class PttWebCrawler(object):
                         link = self.PTT_URL + href
                         article_id = re.sub('\.html', '', href.split('/')[-1])
                         if div == divs[-1] and i == end-start:  # last div of last page
-                            self.store(filename, self.parse(link, article_id, board), 'a')
+                            self.store(directory, filename, self.parse(link, article_id, board), 'a')
                         else:
-                            self.store(filename, self.parse(link, article_id, board) + ',\n', 'a')
+                            self.store(directory, filename, self.parse(link, article_id, board) + ',\n', 'a')
                     except:
                         pass
                 time.sleep(0.1)
-            self.store(filename, u']}', 'a')
+            self.store(directory, filename, u']}', 'a')
             return filename
 
     def parse_article(self, article_id, board, path='.'):
         link = self.PTT_URL + '/bbs/' + board + '/' + article_id + '.html'
+        directory = path
         filename = board + '-' + article_id + '.json'
-        filename = os.path.join(path, filename)
-        self.store(filename, self.parse(link, article_id, board), 'w')
+        #filename = os.path.join(path, filename)
+        self.store(directory, filename, self.parse(link, article_id, board), 'w')
         return filename
 
     @staticmethod
@@ -197,13 +201,17 @@ class PttWebCrawler(object):
         return int(first_page.group(1)) + 1
 
     @staticmethod
-    def store(filename, data, mode):
-        with codecs.open(filename, mode, encoding='utf-8') as f:
+    def store(directory, filename, data, mode):
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        with codecs.open(directory+'/'+filename, mode, encoding='utf-8') as f:
             f.write(data)
 
     @staticmethod
-    def get(filename, mode='r'):
-        with codecs.open(filename, mode, encoding='utf-8') as f:
+    def get(directory, filename, mode='r'):
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        with codecs.open(directory+'/'+filename, mode, encoding='utf-8') as f:
             return json.load(f)
 
 if __name__ == '__main__':
