@@ -9,10 +9,12 @@
 * 支援單篇及多篇文章抓取
 * 過濾資料內空白、空行及特殊字元
 * JSON 格式輸出
-* 支援 Python 2.7, 3.4-3.6
+* 支援 Python 2.7, 3.4-3.7
+* 可設定存檔路徑及撈取請求Timeout(s)
 
 輸出 JSON 格式
-```
+
+```json
 {
     "article_id": 文章 ID,
     "article_title": 文章標題 ,
@@ -43,13 +45,13 @@
 ### 參數說明
 
 ```commandline
-python crawler.py -b 看板名稱 -i 起始索引 結束索引 (設為負數則以倒數第幾頁計算) 
-python crawler.py -b 看板名稱 -a 文章ID 
+python crawler.py -b 看板名稱 -i 起始索引 結束索引 (設為負數則以倒數第幾頁計算)
+python crawler.py -b 看板名稱 -a 文章ID
 ```
 
 ### 範例
 
-爬取 PublicServan 板第 100 頁 (https://www.ptt.cc/bbs/PublicServan/index100.html) 
+爬取 PublicServan 板第 100 頁 (https://www.ptt.cc/bbs/PublicServan/index100.html)
 到第 200 頁 (https://www.ptt.cc/bbs/PublicServan/index200.html) 的內容，
 輸出至 `PublicServan-100-200.json`
 
@@ -59,7 +61,7 @@ python crawler.py -b 看板名稱 -a 文章ID
 cd PttWebCrawler
 python crawler.py -b PublicServan -i 100 200
 ```
-    
+
 * 呼叫 package
 
 ```commandline
@@ -77,13 +79,14 @@ c.parse_articles(100, 200, 'PublicServan')
 ```
 
 ### 測試
+
 ```commandline
 python test.py
 ```
 
 ***
 
-<a name="english_desc"></a>ptt-web-crawler is a crawler for the web version of PTT, the largest online community in Taiwan. 
+<a name="english_desc"></a>ptt-web-crawler is a crawler for the web version of PTT, the largest online community in Taiwan.
 
     usage: python crawler.py [-h] -b BOARD_NAME (-i START_INDEX END_INDEX | -a ARTICLE_ID) [-v]
     optional arguments:
@@ -92,5 +95,7 @@ python test.py
       -i START_INDEX END_INDEX    Start and end index
       -a ARTICLE_ID               Article ID
       -v, --version               show program's version number and exit
+      -dp, --dirpath              set file store path, default='.'
+      -to, --timeout              set request timeout, default=3s
 
 Output would be `BOARD_NAME-START_INDEX-END_INDEX.json` (or `BOARD_NAME-ID.json`)
