@@ -13,7 +13,7 @@ import codecs
 from bs4 import BeautifulSoup
 from six import u
 
-__version__ = '1.0'
+__version__ = '1.1'
 
 # if python 2, disable verify flag in requests.get()
 VERIFY = True
@@ -38,7 +38,8 @@ class PttWebCrawler(object):
         group.add_argument('-i', metavar=('START_INDEX', 'END_INDEX'), type=int, nargs=2, help="Start and end index")
         group.add_argument('-a', metavar='ARTICLE_ID', help="Article ID")
         parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
-        parser.add_argument('-dp', '--dirpath', help='File directory path', dest='dp', default='.')
+        parser.add_argument('-dp', '--dirpath', help='File directory path', dest='dirpath', default='.')
+        parser.add_argument('-to', '--timeout', help='Request timeout(sec)', dest='timeout', default=3)
 
         if not as_lib:
             if cmdline:
@@ -46,17 +47,16 @@ class PttWebCrawler(object):
             else:
                 args = parser.parse_args()
             board = args.b
-            dirpath = args.dp
             if args.i:
                 start = args.i[0]
                 if args.i[1] == -1:
-                    end = self.getLastPage(board)
+                    end = self.getLastPage(board, args.timeout)
                 else:
                     end = args.i[1]
-                self.parse_articles(start, end, board, dirpath)
+                self.parse_articles(start, end, board, args.dirpath, args.timeout)
             else:  # args.a
                 article_id = args.a
-                self.parse_article(article_id, board, dirpath)
+                self.parse_article(article_id, board, args.dirpath, args.timeout)
 
     def parse_articles(self, start, end, board, path='.', timeout=3):
             directory = path
@@ -71,7 +71,8 @@ class PttWebCrawler(object):
                     cookies={'over18': '1'}, verify=VERIFY, timeout=timeout
                 )
                 if resp.status_code != 200:
-                    print('invalid url:', resp.url)
+                    #print('invalid url:', resp.url)
+                    print('code:', resp.status_code, 'url:', resp.url)
                     continue
                 soup = BeautifulSoup(resp.text, 'html.parser')
                 divs = soup.find_all("div", "r-ent")
@@ -82,21 +83,21 @@ class PttWebCrawler(object):
                         link = self.PTT_URL + href
                         article_id = re.sub('\.html', '', href.split('/')[-1])
                         if div == divs[-1] and i == end-start:  # last div of last page
-                            self.store(directory, filename, self.parse(link, article_id, board), 'a')
+                            self.store(directory, filename, self.parse(link, article_id, board, timeout), 'a')
                         else:
-                            self.store(directory, filename, self.parse(link, article_id, board) + ',\n', 'a')
+                            self.store(directory, filename, self.parse(link, article_id, board, timeout) + ',\n', 'a')
                     except:
                         pass
                 time.sleep(0.1)
             self.store(directory, filename, u']}', 'a')
             return filename
 
-    def parse_article(self, article_id, board, path='.'):
+    def parse_article(self, article_id, board, path='.', timeout=3):
         link = self.PTT_URL + '/bbs/' + board + '/' + article_id + '.html'
         directory = path
         filename = board + '-' + article_id + '.json'
         #filename = os.path.join(path, filename)
-        self.store(directory, filename, self.parse(link, article_id, board), 'w')
+        self.store(directory, filename, self.parse(link, article_id, board, timeout), 'w')
         return filename
 
     @staticmethod
@@ -104,8 +105,10 @@ class PttWebCrawler(object):
         print('Processing article:', article_id)
         resp = requests.get(url=link, cookies={'over18': '1'}, verify=VERIFY, timeout=timeout)
         if resp.status_code != 200:
-            print('invalid url:', resp.url)
-            return json.dumps({"error": "invalid url"}, sort_keys=True, ensure_ascii=False)
+            #print('invalid url:', resp.url)
+            #return json.dumps({"error": "invalid url"}, sort_keys=True, ensure_ascii=False)
+            print('code:', resp.status_code, 'url:', resp.url)
+            return parse(link, article_id, board, timeout*2);
         soup = BeautifulSoup(resp.text, 'html.parser')
         main_content = soup.find(id="main-content")
         metas = main_content.select('div.article-metaline')
@@ -190,7 +193,7 @@ class PttWebCrawler(object):
         return json.dumps(data, sort_keys=True, ensure_ascii=False)
 
     @staticmethod
-    def getLastPage(board, timeout=3):
+    def getLastPage(board, timeout):
         content = requests.get(
             url= 'https://www.ptt.cc/bbs/' + board + '/index.html',
             cookies={'over18': '1'}, timeout=timeout

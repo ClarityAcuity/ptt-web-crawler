@@ -9,7 +9,8 @@
 * 支援單篇及多篇文章抓取
 * 過濾資料內空白、空行及特殊字元
 * JSON 格式輸出
-* 支援 Python 2.7, 3.4-3.6
+* 支援 Python 2.7, 3.4-3.7
+* 可設定存檔路徑及撈取請求Timeout(s)
 
 輸出 JSON 格式
 ```
@@ -92,5 +93,7 @@ python test.py
       -i START_INDEX END_INDEX    Start and end index
       -a ARTICLE_ID               Article ID
       -v, --version               show program's version number and exit
+      -dp, --dirpath              set file store path, default='.'
+      -to, --timeout              set request timeout, default=3s
 
 Output would be `BOARD_NAME-START_INDEX-END_INDEX.json` (or `BOARD_NAME-ID.json`)
