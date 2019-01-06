@@ -50,13 +50,13 @@ class PttWebCrawler(object):
             if args.i:
                 start = args.i[0]
                 if args.i[1] == -1:
-                    end = self.getLastPage(board, args.timeout)
+                    end = self.getLastPage(board, int(args.timeout))
                 else:
                     end = args.i[1]
-                self.parse_articles(start, end, board, args.dirpath, args.timeout)
+                self.parse_articles(start, end, board, args.dirpath, int(args.timeout))
             else:  # args.a
                 article_id = args.a
-                self.parse_article(article_id, board, args.dirpath, args.timeout)
+                self.parse_article(article_id, board, args.dirpath, int(args.timeout))
 
     def parse_articles(self, start, end, board, path='.', timeout=3):
             directory = path
